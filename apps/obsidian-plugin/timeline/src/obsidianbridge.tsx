@@ -7,10 +7,12 @@ import { ConfirmModal } from "../../src/confirm-modal";
 import { tagSearchUri, tasksPluginCommand } from "../../utils/utils";
 import { appendTaskToNote } from "./appendtask";
 import { QuickEntryHandlerContext, TaskItemEventHandlersContext } from "./components/context";
+import { CalendarView } from "./components/calendarview";
 import { TimelineView } from "./components/timelineview";
 
 const defaultObsidianBridgeProps = {
 	plugin: {} as ItemView,
+	layout: "timeline" as "timeline" | "calendar",
 	/** The view's state: the bridge renders its options, and the tasks read when the list shown last changed. */
 	store: createStore<TimelineState>(initialTimelineState()) as Store<TimelineState>,
 };
@@ -239,11 +241,15 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 				}}
 			>
 				<TaskItemEventHandlersContext.Provider value={this.getTaskItemHandlers()}>
-					<TimelineView
-						userOptions={this.state.userOptions}
-						tasks={this.state.tasks}
-						quickFilter={this.state.quickFilter}
-					/>
+					{this.props.layout === "calendar" ? (
+						<CalendarView userOptions={this.state.userOptions} tasks={this.state.tasks} />
+					) : (
+						<TimelineView
+							userOptions={this.state.userOptions}
+							tasks={this.state.tasks}
+							quickFilter={this.state.quickFilter}
+						/>
+					)}
 				</TaskItemEventHandlersContext.Provider>
 			</QuickEntryHandlerContext.Provider>
 		);

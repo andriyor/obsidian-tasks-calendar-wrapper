@@ -73,7 +73,7 @@ function notesApp(notes: Record<string, string>) {
  * listens to the view's models as it does in Obsidian.
  */
 function bridgeOf(opened: ReturnType<typeof openView>, app: unknown) {
-	const bridge = new ObsidianBridge({ plugin: { app } as never, store: opened.store });
+	const bridge = new ObsidianBridge({ plugin: { app } as never, layout: "timeline", store: opened.store });
 	const mounted = bridge as unknown as { state: object; props: object };
 	bridge.setState = ((update: object | ((state: object, props: object) => object)) => {
 		mounted.state = {
@@ -90,7 +90,7 @@ function bridgeOf(opened: ReturnType<typeof openView>, app: unknown) {
  * does when it renders, a moment after the change.
  */
 function deferredBridgeOf(opened: ReturnType<typeof openView>, app: unknown) {
-	const bridge = new ObsidianBridge({ plugin: { app } as never, store: opened.store });
+	const bridge = new ObsidianBridge({ plugin: { app } as never, layout: "timeline", store: opened.store });
 	const mounted = bridge as unknown as { state: object; props: object };
 	let queued: (object | ((state: object, props: object) => object))[] = [];
 	bridge.setState = ((update: object | ((state: object, props: object) => object)) => {
@@ -304,7 +304,7 @@ test("the bridge takes in what changed between drawing it and mounting it, and n
 	const notes = { "Inbox.md": "- [ ] beta 📅 2026-01-20" };
 	const app = notesApp(notes);
 	const opened = openView(app);
-	const bridge = new ObsidianBridge({ plugin: { app } as never, store: opened.store });
+	const bridge = new ObsidianBridge({ plugin: { app } as never, layout: "timeline", store: opened.store });
 	let updates = 0;
 	const mounted = bridge as unknown as { state: object };
 	bridge.setState = ((update: object | ((state: object) => object)) => {

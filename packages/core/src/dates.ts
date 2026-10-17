@@ -263,3 +263,14 @@ export function afterInstant(a: DateValue, b: DateValue): boolean {
 export function betweenDaysExclusive(date: DateValue, from: DateValue, to: DateValue): boolean {
 	return asMoment(date).isBetween(asMoment(from), asMoment(to), "day");
 }
+
+/** The days of the month grid a date's month is shown on, as whole weeks starting on Monday. */
+export function monthGrid(date: DateValue): DayKey[][] {
+	const first = date.clone().startOf("month").startOf("isoWeek");
+	const last = date.clone().endOf("month").endOf("isoWeek");
+	const weeks: DayKey[][] = [];
+	for (const day = first; day.isBefore(last); day.add(1, "week")) {
+		weeks.push(Array.from({ length: 7 }, (_, i) => dayKey(day.clone().add(i, "day"))));
+	}
+	return weeks;
+}
