@@ -12,3 +12,8 @@ export function calendarDay({ status, dates }: ResolvedTask): DayKey | undefined
 	const date = done ?? dates.due ?? dates.scheduled ?? dates.start ?? dates.created ?? dates.completion;
 	return date && dayKey(date);
 }
+
+/** Whether the calendar's tag filter keeps a task: it has one of the tags picked, or none are picked. */
+export function hasAnyTag({ task }: ResolvedTask, picked: ReadonlySet<string>): boolean {
+	return picked.size === 0 || task.tags.some((tag) => picked.has(tag));
+}
