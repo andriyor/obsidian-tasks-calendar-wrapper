@@ -1,5 +1,6 @@
 import { moment } from "../../../utils/moment";
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
 	calendarDay,
 	dayKey,
@@ -20,7 +21,11 @@ type CalendarViewState = {
 	month: DayKey;
 	/** The tags of the colour palette picked in the header; tasks with any of them are shown, all when none are. */
 	picked: ReadonlySet<string>;
+	/** The day under the pointer, and where its cell is, for its hover card. */
+	hover?: { day: DayKey; rect: DOMRect; doc: Document };
 };
+
+const CARD_WIDTH = 320;
 
 /** Link syntax shown as its text, e.g. [[Note|label]] as "label". */
 const plainText = (text: string) =>
@@ -48,6 +53,46 @@ export class CalendarView extends React.Component<CalendarViewProps, CalendarVie
 			if (!next.delete(tag)) next.add(tag);
 			return { picked: next };
 		});
+	}
+
+	/** A larger card of the day under the pointer: each of its tasks with its whole text and tags. */
+	private renderHoverCard(byDay: Map<DayKey, ResolvedTask[]>): React.ReactNode {
+		const { hover, picked } = this.state;
+		const tasks = hover ? (byDay.get(hover.day) ?? []).filter((resolved) => hasAnyTag(resolved, picked)) : [];
+		if (!hover || tasks.length === 0) return null;
+		const { day, rect, doc } = hover;
+		const { dateFormat, tagColorPalette } = this.props.userOptions;
+		const win = doc.defaultView ?? window;
+		// Beside the day, on the side with room; level with its top, or its bottom in the lower half of the window.
+		const place: React.CSSProperties = {
+			...(rect.right + CARD_WIDTH + 8 <= win.innerWidth
+				? { left: rect.right + 4 }
+				: { right: win.innerWidth - rect.left + 4 }),
+			...(rect.top > win.innerHeight / 2 ? { bottom: win.innerHeight - rect.bottom } : { top: rect.top }),
+		};
+		return createPortal(
+			<div className="tcw-calendar-card" style={{ ...place, width: CARD_WIDTH }}>
+				<div className="tcw-calendar-card-title">{moment(day).format(dateFormat)}</div>
+				{tasks.map(({ task, status, visual }) => (
+					<div key={task.id} className={"tcw-calendar-task " + status}>
+						<span>
+							{status === TaskStatus.done ? "☑ " : "☐ "}
+							{plainText(visual)}
+						</span>
+						{task.tags.length > 0 && (
+							<div className="tcw-calendar-card-tags">
+								{[...new Set(task.tags)].map((tag) => (
+									<span key={tag} style={{ color: tagColorPalette[tag] }}>
+										{tag}
+									</span>
+								))}
+							</div>
+						)}
+					</div>
+				))}
+			</div>,
+			doc.body,
+		);
 	}
 
 	/** Resolved and grouped once per task list and options, not on every month change. */
@@ -112,12 +157,22 @@ export class CalendarView extends React.Component<CalendarViewProps, CalendarVie
 									(day.slice(0, 7) === this.state.month.slice(0, 7) ? "" : " other-month") +
 									(day === today ? " today" : "")
 								}
+								onMouseEnter={(e) =>
+									this.setState({
+										hover: {
+											day,
+											rect: e.currentTarget.getBoundingClientRect(),
+											doc: e.currentTarget.ownerDocument,
+										},
+									})
+								}
+								onMouseLeave={() => this.setState({ hover: undefined })}
 							>
 								<div className="tcw-calendar-date">{moment(day).date()}</div>
 								{(byDay.get(day) ?? [])
 									.filter((resolved) => hasAnyTag(resolved, picked))
 									.map(({ task, status, visual }) => (
-										<div key={task.id} className={"tcw-calendar-task " + status} title={visual}>
+										<div key={task.id} className={"tcw-calendar-task " + status}>
 											<input
 												type="checkbox"
 												checked={status === TaskStatus.done}
@@ -133,6 +188,7 @@ export class CalendarView extends React.Component<CalendarViewProps, CalendarVie
 							</div>
 						))}
 				</div>
+				{this.renderHoverCard(byDay)}
 			</div>
 		);
 	}

@@ -721,7 +721,47 @@
 .tcw-calendar-task.done > span,
 .tcw-calendar-task.cancelled > span {
 	color: var(--text-muted);
+}
+
+.tcw-calendar-task.cancelled > span {
 	text-decoration: line-through;
+}
+
+.tcw-calendar-card {
+	position: fixed;
+	z-index: var(--layer-tooltip);
+	pointer-events: none;
+	padding: 8px 10px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	box-shadow: var(--shadow-s);
+	font-size: var(--font-ui-small);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	overflow-wrap: anywhere;
+}
+
+.tcw-calendar-card-title {
+	font-weight: 600;
+}
+
+/* The card's tasks look as in the day, with the whole text and the tags below it. */
+.tcw-calendar-card .tcw-calendar-task {
+	flex-direction: column;
+	align-items: flex-start;
+	white-space: normal;
+	font-size: inherit;
+	padding-top: 4px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.tcw-calendar-card-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: var(--font-ui-smaller);
 }
 
 .tcw-calendar-task.overdue > span {
