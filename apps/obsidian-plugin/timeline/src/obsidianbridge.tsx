@@ -1,6 +1,7 @@
 import { App, ItemView, Notice, normalizePath, Pos } from "obsidian";
 import { createStore, normalizeNotePath, type QuickFilter, type Store, type Task } from "@tasks-calendar-wrapper/core";
 import * as React from "react";
+import { moment } from "../../utils/moment";
 import { initialTimelineState, type TimelineState } from "../../src/state/timeline";
 import { UserOption } from "../../src/useroptions";
 import { ConfirmModal } from "../../src/confirm-modal";
@@ -61,6 +62,7 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 		this.onStateChanged = this.onStateChanged.bind(this);
 		this.handleModifyTask = this.handleModifyTask.bind(this);
 		this.handleFilterEnable = this.handleFilterEnable.bind(this);
+		this.handleOpenDailyNote = this.handleOpenDailyNote.bind(this);
 
 		this.seen = this.props.store.getSnapshot();
 		this.state = { userOptions: this.seen.options, tasks: this.seen.tasks };
@@ -173,6 +175,21 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 			});
 	}
 
+	/** Opens the daily note of a day in a new tab, found by the daily note folder and format options. */
+	handleOpenDailyNote(day: string) {
+		const { dailyNoteFolder, dailyNoteFormat } = this.state.userOptions;
+		const path = normalizePath(`${dailyNoteFolder}/${moment(day).format(dailyNoteFormat)}.md`);
+		const file = this.app.vault.getFileByPath(path);
+		if (!file) {
+			new Notice("No daily note for " + day + ": " + path, 5000);
+			return;
+		}
+		this.app.workspace
+			.getLeaf("tab")
+			.openFile(file)
+			.catch((reason) => new Notice("Could not open " + path + ": " + reason, 5000));
+	}
+
 	handleModifyTask(path: string, position: Pos) {
 		this.handleOpenFile(path, position, true);
 	}
@@ -242,7 +259,11 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 			>
 				<TaskItemEventHandlersContext.Provider value={this.getTaskItemHandlers()}>
 					{this.props.layout === "calendar" ? (
-						<CalendarView userOptions={this.state.userOptions} tasks={this.state.tasks} />
+						<CalendarView
+							userOptions={this.state.userOptions}
+							tasks={this.state.tasks}
+							onOpenDay={this.handleOpenDailyNote}
+						/>
 					) : (
 						<TimelineView
 							userOptions={this.state.userOptions}

@@ -15,7 +15,12 @@ import {
 import { UserOption } from "../../../src/useroptions";
 import { TaskItemEventHandlersContext } from "./context";
 
-type CalendarViewProps = Readonly<{ userOptions: UserOption; tasks: readonly Task[] }>;
+type CalendarViewProps = Readonly<{
+	userOptions: UserOption;
+	tasks: readonly Task[];
+	/** A click on a day, outside its tasks. */
+	onOpenDay: (day: DayKey) => void;
+}>;
 type CalendarViewState = {
 	/** The month shown, as the key of its first day. */
 	month: DayKey;
@@ -167,6 +172,9 @@ export class CalendarView extends React.Component<CalendarViewProps, CalendarVie
 									})
 								}
 								onMouseLeave={() => this.setState({ hover: undefined })}
+								onClick={(e) => {
+									if (!(e.target as Element).closest(".tcw-calendar-task")) this.props.onOpenDay(day);
+								}}
 							>
 								<div className="tcw-calendar-date">{moment(day).date()}</div>
 								{(byDay.get(day) ?? [])
