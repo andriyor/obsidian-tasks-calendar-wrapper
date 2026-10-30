@@ -611,3 +611,160 @@
 	gap: var(--size-4-2);
 	margin-bottom: var(--size-4-4);
 }
+
+/* Month calendar view */
+.tcw-calendar {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.tcw-calendar-header {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.tcw-calendar-title {
+	font-size: var(--font-ui-large);
+	font-weight: 600;
+	margin-left: 8px;
+}
+
+.tcw-calendar-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-left: auto;
+}
+
+.tcw-calendar-tag {
+	border: 1px solid var(--tcw-tag-color);
+	color: var(--tcw-tag-color);
+	background: transparent;
+	border-radius: 999px;
+	padding: 0 8px;
+	font-size: var(--font-ui-smaller);
+}
+
+.tcw-calendar-tag[aria-pressed="true"] {
+	background: var(--tcw-tag-color);
+	color: var(--text-on-accent);
+}
+
+.tcw-calendar-grid {
+	flex: 1;
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	/* The weekday row only as tall as its text, the week rows share the rest. */
+	grid-template-rows: auto;
+	grid-auto-rows: minmax(90px, 1fr);
+	gap: 1px;
+	background: var(--background-modifier-border);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.tcw-calendar-weekday {
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-align: center;
+	padding: 2px 0;
+}
+
+.tcw-calendar-day {
+	background: var(--background-primary);
+	padding: 2px 4px;
+	overflow-y: auto;
+	min-width: 0;
+	cursor: pointer;
+}
+
+.tcw-calendar-day.other-month {
+	background: var(--background-secondary);
+	color: var(--text-faint);
+}
+
+.tcw-calendar-day.today .tcw-calendar-date {
+	color: var(--text-on-accent);
+	background: var(--interactive-accent);
+	border-radius: 50%;
+}
+
+.tcw-calendar-date {
+	display: inline-block;
+	min-width: 1.6em;
+	text-align: center;
+	font-size: var(--font-ui-smaller);
+}
+
+.tcw-calendar-task {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.tcw-calendar-task > span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	cursor: pointer;
+}
+
+.tcw-calendar-task > input {
+	margin: 0;
+	flex-shrink: 0;
+}
+
+.tcw-calendar-task.done > span,
+.tcw-calendar-task.cancelled > span {
+	color: var(--text-muted);
+}
+
+.tcw-calendar-task.cancelled > span {
+	text-decoration: line-through;
+}
+
+.tcw-calendar-card {
+	position: fixed;
+	z-index: var(--layer-tooltip);
+	pointer-events: none;
+	padding: 8px 10px;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	box-shadow: var(--shadow-s);
+	font-size: var(--font-ui-small);
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	overflow-wrap: anywhere;
+}
+
+.tcw-calendar-card-title {
+	font-weight: 600;
+}
+
+/* The card's tasks look as in the day, with the whole text and the tags below it. */
+.tcw-calendar-card .tcw-calendar-task {
+	flex-direction: column;
+	align-items: flex-start;
+	white-space: normal;
+	font-size: inherit;
+	padding-top: 4px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.tcw-calendar-card-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: var(--font-ui-smaller);
+}
+
+.tcw-calendar-task.overdue > span {
+	color: var(--text-error);
+}

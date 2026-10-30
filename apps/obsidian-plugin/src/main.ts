@@ -1,6 +1,13 @@
 import { Notice, Plugin, requireApiVersion } from "obsidian";
 
-import { TasksTimelineView, TIMELINE_VIEW, timelineTaskIndex } from "./views";
+import {
+	CALENDAR_VIEW,
+	TasksCalendarView,
+	TasksTimelineView,
+	TasksView,
+	TIMELINE_VIEW,
+	timelineTaskIndex,
+} from "./views";
 
 import { notesSince, shouldShowWhatsNew } from "@tasks-calendar-wrapper/core";
 import { RELEASE_NOTES, SUPPORT_LINKS } from "../utils/whatsnew";
@@ -18,16 +25,17 @@ import { debounceOptionUpdates } from "../utils/refresh";
 
 export default class TasksCalendarWrapper extends Plugin {
 	private readonly settingsStore = createSettingsStore();
-	/** The notes the timelines read, shared, see SharedTaskIndex: made with the first timeline, gone after the last. */
+	/** The notes the views read, shared, see SharedTaskIndex: made with the first view, gone after the last. */
 	private readonly taskIndex = timelineTaskIndex(this.app);
 	/** The settings tab, made in onload. */
 	private settingsTab: TasksCalendarSettingTab | null = null;
 	private readonly pushOptionsToViews = debounceOptionUpdates(() => {
-		this.app.workspace.getLeavesOfType(TIMELINE_VIEW).forEach((leaf) => {
-			if (leaf.view instanceof TasksTimelineView) {
-				leaf.view.onUpdateOptions(this.userOptions);
-			}
-		});
+		for (const type of [TIMELINE_VIEW, CALENDAR_VIEW])
+			this.app.workspace.getLeavesOfType(type).forEach((leaf) => {
+				if (leaf.view instanceof TasksView) {
+					leaf.view.onUpdateOptions(this.userOptions);
+				}
+			});
 	});
 
 	/** The options, frozen; every load and every change replaces them, see state/settings.ts. */
@@ -45,6 +53,11 @@ export default class TasksCalendarWrapper extends Plugin {
 			view.onUpdateOptions(this.userOptions);
 			return view;
 		});
+		this.registerView(CALENDAR_VIEW, (leaf) => {
+			const view = new TasksCalendarView(leaf, this.taskIndex);
+			view.onUpdateOptions(this.userOptions);
+			return view;
+		});
 		if (this.userOptions.openViewOnStartup)
 			this.app.workspace.onLayoutReady(() => {
 				this.activateView(TIMELINE_VIEW).catch(reportError);
@@ -55,6 +68,14 @@ export default class TasksCalendarWrapper extends Plugin {
 			name: "Open Tasks Timeline View",
 			callback: () => {
 				this.activateView(TIMELINE_VIEW).catch(reportError);
+			},
+		});
+
+		this.addCommand({
+			id: "open-tasks-calendar-view",
+			name: "Open Tasks Calendar View",
+			callback: () => {
+				this.activateView(CALENDAR_VIEW).catch(reportError);
 			},
 		});
 
@@ -138,7 +159,7 @@ export default class TasksCalendarWrapper extends Plugin {
 	}
 
 	async activateView(type: string) {
-		if (type !== TIMELINE_VIEW) {
+		if (type !== TIMELINE_VIEW && type !== CALENDAR_VIEW) {
 			return;
 		}
 
@@ -149,7 +170,10 @@ export default class TasksCalendarWrapper extends Plugin {
 		}
 
 		this.app.workspace.detachLeavesOfType(type);
-		await this.app.workspace.getRightLeaf(false)?.setViewState({
+		// The timeline fits the sidebar, the month grid needs the room of a tab.
+		const leaf =
+			type === CALENDAR_VIEW ? this.app.workspace.getLeaf("tab") : this.app.workspace.getRightLeaf(false);
+		await leaf?.setViewState({
 			type: type,
 			active: true,
 		});
@@ -157,6 +181,6 @@ export default class TasksCalendarWrapper extends Plugin {
 }
 
 function reportError(error: unknown) {
-	console.error("Tasks Calendar Wrapper: failed to open the timeline view", error);
-	new Notice("Failed to open the timeline view. See the developer console for details.", 5000);
+	console.error("Tasks Calendar Wrapper: failed to open the view", error);
+	new Notice("Failed to open the view. See the developer console for details.", 5000);
 }

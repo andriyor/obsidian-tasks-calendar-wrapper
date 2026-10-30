@@ -458,6 +458,7 @@ test("unloading the plugin drops the options waiting to reach the timelines, and
 		plugin.commands.map((command) => [command.id, command.name]),
 		[
 			["tasks-calendar-wrapper:open-tasks-timeline-view", "Tasks Calendar Wrapper: Open Tasks Timeline View"],
+			["tasks-calendar-wrapper:open-tasks-calendar-view", "Tasks Calendar Wrapper: Open Tasks Calendar View"],
 			["tasks-calendar-wrapper:show-whats-new", "Tasks Calendar Wrapper: Show what's new"],
 		],
 	);
