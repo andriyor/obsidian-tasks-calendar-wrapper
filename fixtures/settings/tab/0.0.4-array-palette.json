@@ -85,6 +85,17 @@
     ]
   },
   {
+    "name": "Tag Filter Presets",
+    "desc": "Tags to pick in the tag filter, one preset a line: a name, a colon and its tags, or just the tags.                With none, the tag filter is a text box.",
+    "controls": [
+      {
+        "type": "textarea",
+        "value": "",
+        "placeholder": "Low energy: #energyBoost #lowEnergy\nWork: #c/work"
+      }
+    ]
+  },
+  {
     "name": "Tasks Files",
     "desc": "Task Files you would like to specify explicitly for quick entry panel.                    make sure paths are separated by , .",
     "controls": [
@@ -351,6 +362,20 @@
       {
         "type": "toggle",
         "value": false
+      }
+    ]
+  },
+  {
+    "name": "Style for new dates",
+    "desc": "Used when the timeline adds a date to a task line that has no task fields yet (no dates, priority, recurrence or other Tasks fields). Lines that already use one style keep it. If the Tasks plugin is set to the Dataview format, choose Dataview fields.",
+    "controls": [
+      {
+        "type": "dropdown",
+        "value": "emoji",
+        "options": [
+          "emoji",
+          "dataview"
+        ]
       }
     ]
   },

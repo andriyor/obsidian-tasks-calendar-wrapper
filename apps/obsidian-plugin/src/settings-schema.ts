@@ -1,5 +1,6 @@
 import {
 	fileListCodec,
+	lineListCodec,
 	pathListCodec,
 	plainTextCodec,
 	propertyRulesCodec,
@@ -225,6 +226,15 @@ export const settingsSchema: readonly Spec[] = Object.freeze(
 				codec: fileListCodec,
 				group: "interface",
 				shownWhen: "useQuickEntry",
+				redrawsTab: false,
+				readWhen: PUSH,
+			},
+			{
+				key: "tagFilterPresets",
+				type: "stringList",
+				control: "textArea",
+				codec: lineListCodec,
+				group: "interface",
 				redrawsTab: false,
 				readWhen: PUSH,
 			},

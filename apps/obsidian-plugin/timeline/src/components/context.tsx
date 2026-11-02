@@ -16,6 +16,7 @@ export const UserOptionContext = React.createContext({
 	tagPalette: {} as Record<string, string>,
 	hideTags: [] as string[],
 	useBuiltinStyle: true as boolean,
+	tagFilterPresets: [] as string[],
 });
 
 export const QuickEntryHandlerContext = React.createContext<{

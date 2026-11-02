@@ -110,6 +110,11 @@ export const defaultUserOptions = {
 	 */
 	taskFiles: [] as string[],
 	/**
+	 * Tag filter presets, one a line, e.g. "Low energy: #energyBoost #lowEnergy", or just "#energyBoost".
+	 * When there are any, the tag filter is a dropdown of them instead of a text box.
+	 */
+	tagFilterPresets: [] as string[],
+	/**
 	 * Specify a color palette for tags.
 	 * Note that this will override other color setting for tags.
 	 */

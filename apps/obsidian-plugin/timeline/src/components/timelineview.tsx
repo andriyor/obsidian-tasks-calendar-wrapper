@@ -87,6 +87,7 @@ export class TimelineView extends React.Component<TimelineProps, TimelineStates>
 			taskFiles,
 			select: options.inbox,
 			useBuiltinStyle: options.useBuiltinStyle,
+			tagFilterPresets: options.tagFilterPresets ?? [],
 		};
 		if (!this.userOptionValue || !isEqual(this.userOptionValue, value)) this.userOptionValue = value;
 		return this.userOptionValue;

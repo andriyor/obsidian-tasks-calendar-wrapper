@@ -1,6 +1,7 @@
 import { App, Modal, Notice, Plugin, PluginSettingTab, Setting } from "obsidian";
 import {
 	fileListCodec,
+	lineListCodec,
 	pathListCodec,
 	plainTextCodec,
 	propertyRulesCodec,
@@ -133,6 +134,18 @@ export class TasksCalendarSettingTab extends PluginSettingTab {
 				});
 				d.setValue(this.plugin.userOptions.entryPosition);
 				d.onChange(async (v) => await this.onOptionUpdate({ entryPosition: v as "today" | "top" | "bottom" }));
+			});
+
+		new Setting(containerEl)
+			.setName("Tag Filter Presets")
+			.setDesc(
+				"Tags to pick in the tag filter, one preset a line: a name, a colon and its tags, or just the tags.\
+                With none, the tag filter is a text box.",
+			)
+			.addTextArea((ta) => {
+				ta.setPlaceholder("Low energy: #energyBoost #lowEnergy\nWork: #c/work");
+				ta.setValue(lineListCodec.format(this.plugin.userOptions.tagFilterPresets));
+				ta.onChange(async (v) => await this.onOptionUpdate({ tagFilterPresets: lineListCodec.parse(v) }));
 			});
 
 		if (this.plugin.userOptions.useQuickEntry) {

@@ -222,6 +222,22 @@ const interactions: Interaction[] = [
 		options: { useQuickEntry: false },
 	},
 	{
+		name: "picking a tag filter preset calls handleFilterEnable with its tags",
+		selector: ".tagFilterBar select",
+		event: "change",
+		value: "1",
+		handler: "handleFilterEnable",
+		args: [undefined, undefined, [], ["#c/work"]],
+		openNote: false,
+		defaultPrevented: false,
+		options: { tagFilterPresets: ["Low energy: #energyBoost #lowEnergy", "#c/work", "no tags here"] },
+		checkLocal: (fixture) =>
+			assert.deepEqual(
+				[...fixture.root().querySelectorAll(".tagFilterBar option")].map((option) => option.textContent),
+				["🏷️ All tasks", "Low energy", "#c/work"],
+			),
+	},
+	{
 		name: "changing the quick entry note selects it and focuses the text without submitting",
 		selector: "select.fileSelect",
 		event: "change",

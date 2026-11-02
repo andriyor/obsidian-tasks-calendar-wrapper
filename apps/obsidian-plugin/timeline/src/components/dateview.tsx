@@ -9,7 +9,7 @@ import {
 	type TaskRowModel,
 } from "@tasks-calendar-wrapper/core";
 import * as Icons from "./asserts/icons";
-import { QuickEntryHandlerContext, TodayFocusEventHandlersContext } from "./context";
+import { QuickEntryHandlerContext, TodayFocusEventHandlersContext, UserOptionContext } from "./context";
 import { recordRender } from "./renderprobe";
 import { TaskItemView } from "./taskitemview";
 
@@ -122,6 +122,15 @@ function tagsOf(text: string): string[] {
 		.map((tag) => (tag.startsWith("#") ? tag : "#" + tag));
 }
 
+/** A preset line of the settings: "name: #a #b", or the tags alone, named after them. None for a line without tags. */
+function presetOf(line: string): { name: string; tags: string[] } | undefined {
+	const colon = line.indexOf(":");
+	const tags = tagsOf(colon === -1 ? line : line.slice(colon + 1));
+	if (tags.length === 0) return undefined;
+	const name = colon === -1 ? "" : line.slice(0, colon).trim();
+	return { name: name || tags.join(" "), tags };
+}
+
 type TagFilterProps = { readonly applied?: QuickFilter };
 type TagFilterState = { readonly text: string; readonly applied?: QuickFilter };
 
@@ -130,6 +139,8 @@ type TagFilterState = { readonly text: string; readonly applied?: QuickFilter };
  * entry panel is or not, and keeps the panel's dates and priorities.
  */
 class TagFilter extends React.Component<TagFilterProps, TagFilterState> {
+	static contextType = UserOptionContext;
+	declare context: React.ContextType<typeof UserOptionContext>;
 	state: TagFilterState = { text: this.props.applied?.tags?.join(" ") ?? "", applied: this.props.applied };
 
 	/** A filter applied or cleared elsewhere, such as by adding a task, shows its own tags. */
@@ -151,6 +162,30 @@ class TagFilter extends React.Component<TagFilterProps, TagFilterState> {
 							tagsOf(text),
 						);
 					};
+					const presets = this.context.tagFilterPresets.flatMap((line) => presetOf(line) ?? []);
+					if (presets.length !== 0) {
+						const applied = this.props.applied?.tags?.join(" ") ?? "";
+						const selected = presets.findIndex((preset) => preset.tags.join(" ") === applied);
+						return (
+							<div className="tagFilterBar">
+								<select
+									aria-label="Show only tasks with the tags of a preset"
+									value={selected === -1 ? "" : String(selected)}
+									onChange={(e) => {
+										const preset = presets[Number(e.target.value)];
+										apply(e.target.value === "" || !preset ? "" : preset.tags.join(" "));
+									}}
+								>
+									<option value="">🏷️ All tasks</option>
+									{presets.map((preset, i) => (
+										<option value={String(i)} key={i} title={preset.tags.join(" ")}>
+											{preset.name}
+										</option>
+									))}
+								</select>
+							</div>
+						);
+					}
 					return (
 						<div className="tagFilterBar">
 							<input
