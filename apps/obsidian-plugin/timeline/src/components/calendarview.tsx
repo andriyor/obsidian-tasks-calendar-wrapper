@@ -7,6 +7,7 @@ import {
 	hasAnyTag,
 	monthGrid,
 	resolveTasks,
+	taskRowModel,
 	TaskStatus,
 	type DayKey,
 	type ResolvedTask,
@@ -100,6 +101,16 @@ export class CalendarView extends React.Component<CalendarViewProps, CalendarVie
 		);
 	}
 
+	/** The row the timeline would show for the task, which the writer checks the note's line against. */
+	private rowModel(resolved: ResolvedTask) {
+		const { dateFormat, hideTags, tagColorPalette, useBuiltinStyle } = this.props.userOptions;
+		return taskRowModel(
+			resolved,
+			{ dateFormat, hideTags, tagPalette: tagColorPalette, useBuiltinStyle },
+			{ now: moment(), moment, warn: (message, error) => console.warn(message, error) },
+		);
+	}
+
 	/** Resolved and grouped once per task list and options, not on every month change. */
 	private getTasksByDay(): Map<DayKey, ResolvedTask[]> {
 		const { tasks, userOptions } = this.props;
@@ -179,20 +190,31 @@ export class CalendarView extends React.Component<CalendarViewProps, CalendarVie
 								<div className="tcw-calendar-date">{moment(day).date()}</div>
 								{(byDay.get(day) ?? [])
 									.filter((resolved) => hasAnyTag(resolved, picked))
-									.map(({ task, status, visual }) => (
-										<div key={task.id} className={"tcw-calendar-task " + status}>
-											<input
-												type="checkbox"
-												checked={status === TaskStatus.done}
-												onChange={() =>
-													this.context.handleCompleteTask(task.path, task.position)
-												}
-											/>
-											<span onClick={() => this.context.handleOpenFile(task.path, task.position)}>
-												{plainText(visual)}
-											</span>
-										</div>
-									))}
+									.map((resolved) => {
+										const { task, status, visual } = resolved;
+										return (
+											<div key={task.id} className={"tcw-calendar-task " + status}>
+												<input
+													type="checkbox"
+													checked={status === TaskStatus.done}
+													onClick={(e) =>
+														void this.context.handleCompleteTask(
+															this.rowModel(resolved),
+															e.nativeEvent,
+														)
+													}
+													readOnly
+												/>
+												<span
+													onClick={() =>
+														this.context.handleOpenFile(task.path, task.position)
+													}
+												>
+													{plainText(visual)}
+												</span>
+											</div>
+										);
+									})}
 							</div>
 						))}
 				</div>
