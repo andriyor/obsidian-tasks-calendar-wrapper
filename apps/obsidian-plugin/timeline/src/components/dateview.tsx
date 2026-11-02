@@ -61,7 +61,12 @@ export class DateView extends React.Component<DateViewProps> {
 				{entry && <Counters counters={entry.counters} />}
 				{entry && (
 					<QuickEntryHandlerContext.Consumer>
-						{({ quickFilter }) => <QuickEntry applied={quickFilter} taskFiles={entry.taskFiles} />}
+						{({ quickFilter }) => (
+							<>
+								<TagFilter applied={quickFilter} />
+								<QuickEntry applied={quickFilter} taskFiles={entry.taskFiles} />
+							</>
+						)}
 					</QuickEntryHandlerContext.Consumer>
 				)}
 				{day.tasks.length > 0 && (
@@ -105,6 +110,67 @@ class NormalDateContent extends React.Component<NormalDateContentProps> {
 					<TaskItemView key={resolved.task.id} model={this.props.modelFor(resolved)} />
 				))}
 			</div>
+		);
+	}
+}
+
+/** The tags typed in the tag filter, split on spaces and commas, each with its "#". */
+function tagsOf(text: string): string[] {
+	return text
+		.split(/[\s,]+/)
+		.filter((tag) => tag.replace(/^#+/, "") !== "")
+		.map((tag) => (tag.startsWith("#") ? tag : "#" + tag));
+}
+
+type TagFilterProps = { readonly applied?: QuickFilter };
+type TagFilterState = { readonly text: string; readonly applied?: QuickFilter };
+
+/**
+ * Shows only tasks with any of the typed tags, applied on Enter and cleared when emptied. It is shown whether the quick
+ * entry panel is or not, and keeps the panel's dates and priorities.
+ */
+class TagFilter extends React.Component<TagFilterProps, TagFilterState> {
+	state: TagFilterState = { text: this.props.applied?.tags?.join(" ") ?? "", applied: this.props.applied };
+
+	/** A filter applied or cleared elsewhere, such as by adding a task, shows its own tags. */
+	static getDerivedStateFromProps(props: TagFilterProps, state: TagFilterState): TagFilterState | null {
+		if (props.applied === state.applied) return null;
+		return { text: props.applied?.tags?.join(" ") ?? "", applied: props.applied };
+	}
+
+	render(): React.ReactNode {
+		return (
+			<QuickEntryHandlerContext.Consumer>
+				{(callback) => {
+					const apply = (text: string) => {
+						const { applied } = this.props;
+						callback.handleFilterEnable(
+							applied?.from,
+							applied?.to,
+							[...(applied?.priorities ?? [])],
+							tagsOf(text),
+						);
+					};
+					return (
+						<div className="tagFilterBar">
+							<input
+								type="search"
+								placeholder="🏷️ Filter by tags: #energyBoost #walk"
+								aria-label="Show only tasks with any of these tags"
+								value={this.state.text}
+								onChange={(e) => {
+									const text = e.target.value;
+									this.setState({ text });
+									if (text.trim() === "") apply("");
+								}}
+								onKeyUp={(e) => {
+									if (e.key === "Enter") apply(this.state.text);
+								}}
+							/>
+						</div>
+					);
+				}}
+			</QuickEntryHandlerContext.Consumer>
 		);
 	}
 }
@@ -359,9 +425,12 @@ class QuickEntry extends React.Component<QuickEntryProps, QuickEntryState> {
 											this.textInput.current?.focus();
 										}
 									} else {
-										callback.handleFilterEnable(this.state.draft.from, this.state.draft.to, [
-											...this.state.draft.priorities,
-										]);
+										callback.handleFilterEnable(
+											this.state.draft.from,
+											this.state.draft.to,
+											[...this.state.draft.priorities],
+											[...(this.props.applied?.tags ?? [])],
+										);
 									}
 								}}
 							>

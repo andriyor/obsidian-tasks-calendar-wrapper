@@ -35,7 +35,7 @@ type Interaction = {
 	options?: Partial<UserOption>;
 	mobile?: boolean;
 	guarded?: boolean;
-	prepare?: "append" | "filter" | "filter-mode" | "dates" | "priorities";
+	prepare?: "append" | "filter" | "filter-mode" | "dates" | "priorities" | "tags";
 	rootClass?: string;
 	value?: string;
 	checkLocal?: (fixture: Mounted) => void;
@@ -204,10 +204,22 @@ const interactions: Interaction[] = [
 		selector: ".quickEntryPanel button.ok",
 		event: "click",
 		handler: "handleFilterEnable",
-		args: ["2026-01-10", "2026-01-20", ["1", "2"]],
+		args: ["2026-01-10", "2026-01-20", ["1", "2"], []],
 		openNote: false,
 		defaultPrevented: false,
 		prepare: "filter",
+	},
+	{
+		name: "Enter in the tag filter calls handleFilterEnable with the typed tags, each with its #",
+		selector: ".tagFilterBar input",
+		event: "keyup",
+		handler: "handleFilterEnable",
+		args: [undefined, undefined, [], ["#energyBoost", "#walk"]],
+		openNote: false,
+		defaultPrevented: false,
+		prepare: "tags",
+		// Shown although the quick entry panel is not.
+		options: { useQuickEntry: false },
 	},
 	{
 		name: "changing the quick entry note selects it and focuses the text without submitting",
@@ -312,8 +324,12 @@ async function mountInteractions(t: TestContext, options: Partial<UserOption> = 
 			record("handleCreateNewTask", path, text);
 			return true;
 		},
-		handleFilterEnable: (from: string | undefined, to: string | undefined, priorities: string[]) =>
-			record("handleFilterEnable", from, to, priorities),
+		handleFilterEnable: (
+			from: string | undefined,
+			to: string | undefined,
+			priorities: string[],
+			tags: string[] = [],
+		) => record("handleFilterEnable", from, to, priorities, tags),
 	};
 	// Keep the bridge's quick-entry context and replace its callbacks at the boundary, before any writer is reached.
 	const observed = onTimelineRender(t, (_props, rendered) =>
@@ -397,6 +413,17 @@ async function prepare(fixture: Mounted, mode?: Interaction["prepare"]) {
 	if (mode === "append") {
 		await select(fixture, "select.fileSelect", "Other.md");
 		fixture.root().querySelector<HTMLInputElement>("input.newTask")!.value = "a new task";
+	} else if (mode === "tags") {
+		const input = fixture.root().querySelector<HTMLInputElement>(".tagFilterBar input");
+		assert.ok(input);
+		await act(() => {
+			Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!.call(
+				input,
+				"energyBoost, #walk",
+			);
+			input.dispatchEvent(new Event("input", { bubbles: true }));
+		});
+		assert.deepEqual(fixture.calls, [], "typing changes the draft without submitting it");
 	} else if (mode) {
 		await select(fixture, "select.actionName", "filter");
 		if (mode === "filter-mode") return;

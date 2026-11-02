@@ -78,8 +78,14 @@ export function quickFilterOf(
 	from: string | undefined,
 	to: string | undefined,
 	priorities: readonly string[],
+	tags: readonly string[] = [],
 ): QuickFilter {
-	return Object.freeze({ from, to, priorities: Object.freeze([...priorities]) });
+	return Object.freeze({
+		from,
+		to,
+		priorities: Object.freeze([...priorities]),
+		...(tags.length !== 0 && { tags: Object.freeze([...tags]) }),
+	});
 }
 
 /** The bridge's state with the tasks of a new list shown, keeping the quick filter. */
@@ -166,11 +172,16 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 	}
 
 	/** The quick entry panel's filter, which core applies, see QuickFilter. */
-	handleFilterEnable(startDate: string | undefined, endDate: string | undefined, priorities: string[]) {
+	handleFilterEnable(
+		startDate: string | undefined,
+		endDate: string | undefined,
+		priorities: string[],
+		tags: string[] = [],
+	) {
 		const quickFilter =
-			!startDate && !endDate && priorities.length === 0
+			!startDate && !endDate && priorities.length === 0 && tags.length === 0
 				? undefined
-				: quickFilterOf(startDate, endDate, priorities);
+				: quickFilterOf(startDate, endDate, priorities, tags);
 		this.setState((state) => ({
 			quickFilter: isEqual(state.quickFilter, quickFilter) ? state.quickFilter : quickFilter,
 		}));

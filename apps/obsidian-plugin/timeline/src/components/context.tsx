@@ -20,7 +20,12 @@ export const UserOptionContext = React.createContext({
 
 export const QuickEntryHandlerContext = React.createContext<{
 	handleCreateNewTask: (filePath: string, content: string) => Promise<boolean>;
-	handleFilterEnable: (startDate: string | undefined, enddate: string | undefined, priorities: string[]) => void;
+	handleFilterEnable: (
+		startDate: string | undefined,
+		enddate: string | undefined,
+		priorities: string[],
+		tags?: string[],
+	) => void;
 	quickFilter?: QuickFilter;
 }>({
 	handleCreateNewTask: async (filePath: string, content: string) => false,
