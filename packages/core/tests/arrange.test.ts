@@ -235,14 +235,14 @@ test("the quick filter decides which years have a header", () => {
 
 test("the quick filter's tags keep a task with any of them, ignoring case", () => {
 	const resolved = resolve([
-		"- [ ] shower #energyBoost",
-		"- [ ] walk #lowEnergy",
+		"- [ ] dishes #home",
+		"- [ ] post a letter #errand",
 		"- [ ] report #work",
 		"- [ ] untagged",
 	]);
 	const tasksWith = (tags: string[]) =>
 		arrange(resolved, view({ quickFilter: { priorities: [], tags } }), env).tasks.map((r) => r.visual);
-	assert.deepEqual(tasksWith(["#energyboost", "#lowEnergy"]), ["shower", "walk"]);
+	assert.deepEqual(tasksWith(["#HOME", "#errand"]), ["dishes", "post a letter"]);
 	assert.equal(tasksWith([]).length, 4);
 });
 

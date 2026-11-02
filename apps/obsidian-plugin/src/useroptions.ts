@@ -110,7 +110,7 @@ export const defaultUserOptions = {
 	 */
 	taskFiles: [] as string[],
 	/**
-	 * Tag filter presets, one a line, e.g. "Low energy: #energyBoost #lowEnergy", or just "#energyBoost".
+	 * Tag filter presets, one a line, e.g. "Home: #home #errand", or just "#home".
 	 * When there are any, the tag filter is a dropdown of them instead of a text box.
 	 */
 	tagFilterPresets: [] as string[],

@@ -190,7 +190,7 @@ class TagFilter extends React.Component<TagFilterProps, TagFilterState> {
 						<div className="tagFilterBar">
 							<input
 								type="search"
-								placeholder="🏷️ Filter by tags: #energyBoost #walk"
+								placeholder="🏷️ Filter by tags: #home #errand"
 								aria-label="Show only tasks with any of these tags"
 								value={this.state.text}
 								onChange={(e) => {

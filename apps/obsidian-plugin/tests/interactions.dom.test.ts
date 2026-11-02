@@ -214,7 +214,7 @@ const interactions: Interaction[] = [
 		selector: ".tagFilterBar input",
 		event: "keyup",
 		handler: "handleFilterEnable",
-		args: [undefined, undefined, [], ["#energyBoost", "#walk"]],
+		args: [undefined, undefined, [], ["#home", "#errand"]],
 		openNote: false,
 		defaultPrevented: false,
 		prepare: "tags",
@@ -230,11 +230,11 @@ const interactions: Interaction[] = [
 		args: [undefined, undefined, [], ["#c/work"]],
 		openNote: false,
 		defaultPrevented: false,
-		options: { tagFilterPresets: ["Low energy: #energyBoost #lowEnergy", "#c/work", "no tags here"] },
+		options: { tagFilterPresets: ["Home: #home #errand", "#c/work", "no tags here"] },
 		checkLocal: (fixture) =>
 			assert.deepEqual(
 				[...fixture.root().querySelectorAll(".tagFilterBar option")].map((option) => option.textContent),
-				["🏷️ All tasks", "Low energy", "#c/work"],
+				["🏷️ All tasks", "Home", "#c/work"],
 			),
 	},
 	{
@@ -435,7 +435,7 @@ async function prepare(fixture: Mounted, mode?: Interaction["prepare"]) {
 		await act(() => {
 			Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!.call(
 				input,
-				"energyBoost, #walk",
+				"home, #errand",
 			);
 			input.dispatchEvent(new Event("input", { bubbles: true }));
 		});

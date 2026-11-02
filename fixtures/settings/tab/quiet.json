@@ -91,7 +91,7 @@
       {
         "type": "textarea",
         "value": "",
-        "placeholder": "Low energy: #energyBoost #lowEnergy\nWork: #c/work"
+        "placeholder": "Home: #home #errand\nWork: #c/work"
       }
     ]
   },

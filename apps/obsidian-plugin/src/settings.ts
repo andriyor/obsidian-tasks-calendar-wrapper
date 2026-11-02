@@ -143,7 +143,7 @@ export class TasksCalendarSettingTab extends PluginSettingTab {
                 With none, the tag filter is a text box.",
 			)
 			.addTextArea((ta) => {
-				ta.setPlaceholder("Low energy: #energyBoost #lowEnergy\nWork: #c/work");
+				ta.setPlaceholder("Home: #home #errand\nWork: #c/work");
 				ta.setValue(lineListCodec.format(this.plugin.userOptions.tagFilterPresets));
 				ta.onChange(async (v) => await this.onOptionUpdate({ tagFilterPresets: lineListCodec.parse(v) }));
 			});
