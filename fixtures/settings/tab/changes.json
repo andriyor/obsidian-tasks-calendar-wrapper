@@ -88,57 +88,6 @@
     "redrawn": false
   },
   {
-    "row": "Tag Filter Presets",
-    "type": "textarea",
-    "input": "",
-    "writes": [
-      {
-        "tagFilterPresets": []
-      }
-    ],
-    "redrawn": false
-  },
-  {
-    "row": "Tag Filter Presets",
-    "type": "textarea",
-    "input": " a , b ,, c ",
-    "writes": [
-      {
-        "tagFilterPresets": [
-          "a , b ,, c"
-        ]
-      }
-    ],
-    "redrawn": false
-  },
-  {
-    "row": "Tag Filter Presets",
-    "type": "textarea",
-    "input": "x, -, [ ]",
-    "writes": [
-      {
-        "tagFilterPresets": [
-          "x, -, [ ]"
-        ]
-      }
-    ],
-    "redrawn": false
-  },
-  {
-    "row": "Tag Filter Presets",
-    "type": "textarea",
-    "input": "status: archived, done\npriority: low",
-    "writes": [
-      {
-        "tagFilterPresets": [
-          "status: archived, done",
-          "priority: low"
-        ]
-      }
-    ],
-    "redrawn": false
-  },
-  {
     "row": "Tasks Files",
     "type": "textarea",
     "input": "",
@@ -624,17 +573,6 @@
     "writes": [
       {
         "openNoteInsteadOfInPlace": true
-      }
-    ],
-    "redrawn": false
-  },
-  {
-    "row": "Style for new dates",
-    "type": "dropdown",
-    "input": "dataview",
-    "writes": [
-      {
-        "newDateStyle": "dataview"
       }
     ],
     "redrawn": false

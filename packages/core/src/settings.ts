@@ -59,16 +59,6 @@ export const statusListCodec: TextCodec<string[]> = Object.freeze({
 	format: (markers: readonly string[]) => markers.join(","),
 });
 
-/** One item a line: each trimmed, empty lines dropped. */
-export const lineListCodec: TextCodec<string[]> = Object.freeze({
-	parse: (text: string) =>
-		text
-			.split("\n")
-			.map((line) => line.trim())
-			.filter((line) => line.length > 0),
-	format: (lines: readonly string[]) => lines.join("\n"),
-});
-
 /** Text without the spaces around it. */
 export const trimmedTextCodec: TextCodec<string> = Object.freeze({
 	parse: (text: string) => text.trim(),

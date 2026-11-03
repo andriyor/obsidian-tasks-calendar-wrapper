@@ -9,13 +9,15 @@ import {
 	type TaskRowModel,
 } from "@tasks-calendar-wrapper/core";
 import * as Icons from "./asserts/icons";
-import { QuickEntryHandlerContext, TodayFocusEventHandlersContext, UserOptionContext } from "./context";
+import { QuickEntryHandlerContext, TodayFocusEventHandlersContext } from "./context";
 import { recordRender } from "./renderprobe";
 import { TaskItemView } from "./taskitemview";
 
 export type EntryProps = {
 	readonly counters: readonly CounterProps[];
 	readonly taskFiles: readonly string[];
+	/** The tags on the tasks, suggested by the tag filter. */
+	readonly tags: readonly string[];
 };
 
 type DateViewProps = {
@@ -63,7 +65,7 @@ export class DateView extends React.Component<DateViewProps> {
 					<QuickEntryHandlerContext.Consumer>
 						{({ quickFilter }) => (
 							<>
-								<TagFilter applied={quickFilter} />
+								<TagFilter applied={quickFilter} tags={entry.tags} />
 								<QuickEntry applied={quickFilter} taskFiles={entry.taskFiles} />
 							</>
 						)}
@@ -114,98 +116,72 @@ class NormalDateContent extends React.Component<NormalDateContentProps> {
 	}
 }
 
-/** The tags typed in the tag filter, split on spaces and commas, each with its "#". */
+/** The tag typed in the tag filter, with its "#"; none for an empty filter. */
 function tagsOf(text: string): string[] {
-	return text
-		.split(/[\s,]+/)
-		.filter((tag) => tag.replace(/^#+/, "") !== "")
-		.map((tag) => (tag.startsWith("#") ? tag : "#" + tag));
+	const tag = text.trim().replace(/^#+/, "");
+	return tag === "" ? [] : ["#" + tag];
 }
 
-/** A preset line of the settings: "name: #a #b", or the tags alone, named after them. None for a line without tags. */
-function presetOf(line: string): { name: string; tags: string[] } | undefined {
-	const colon = line.indexOf(":");
-	const tags = tagsOf(colon === -1 ? line : line.slice(colon + 1));
-	if (tags.length === 0) return undefined;
-	const name = colon === -1 ? "" : line.slice(0, colon).trim();
-	return { name: name || tags.join(" "), tags };
-}
-
-type TagFilterProps = { readonly applied?: QuickFilter };
+type TagFilterProps = { readonly applied?: QuickFilter; readonly tags: readonly string[] };
 type TagFilterState = { readonly text: string; readonly applied?: QuickFilter };
 
 /**
- * Shows only tasks with any of the typed tags, applied on Enter and cleared when emptied. It is shown whether the quick
- * entry panel is or not, and keeps the panel's dates and priorities.
+ * Shows only tasks with the typed tag, suggesting the tags on the tasks. A suggestion or Enter applies it, and emptying
+ * the box clears it. It is shown whether the quick entry panel is or not, and keeps the panel's dates and priorities.
  */
 class TagFilter extends React.Component<TagFilterProps, TagFilterState> {
-	static contextType = UserOptionContext;
-	declare context: React.ContextType<typeof UserOptionContext>;
+	static contextType = QuickEntryHandlerContext;
+	declare context: React.ContextType<typeof QuickEntryHandlerContext>;
+	private readonly input = React.createRef<HTMLInputElement>();
+	private stopSuggesting?: () => void;
 	state: TagFilterState = { text: this.props.applied?.tags?.join(" ") ?? "", applied: this.props.applied };
 
-	/** A filter applied or cleared elsewhere, such as by adding a task, shows its own tags. */
+	/** A filter applied or cleared elsewhere, such as by adding a task, shows its own tag. */
 	static getDerivedStateFromProps(props: TagFilterProps, state: TagFilterState): TagFilterState | null {
 		if (props.applied === state.applied) return null;
 		return { text: props.applied?.tags?.join(" ") ?? "", applied: props.applied };
 	}
 
+	componentDidMount(): void {
+		if (this.input.current)
+			this.stopSuggesting = this.context.suggestTags?.(
+				this.input.current,
+				() => this.props.tags,
+				(tag) => {
+					this.setState({ text: tag });
+					this.apply(tag);
+				},
+			);
+	}
+
+	componentWillUnmount(): void {
+		this.stopSuggesting?.();
+	}
+
+	private apply(text: string): void {
+		const { applied } = this.props;
+		this.context.handleFilterEnable(applied?.from, applied?.to, [...(applied?.priorities ?? [])], tagsOf(text));
+	}
+
 	render(): React.ReactNode {
 		return (
-			<QuickEntryHandlerContext.Consumer>
-				{(callback) => {
-					const apply = (text: string) => {
-						const { applied } = this.props;
-						callback.handleFilterEnable(
-							applied?.from,
-							applied?.to,
-							[...(applied?.priorities ?? [])],
-							tagsOf(text),
-						);
-					};
-					const presets = this.context.tagFilterPresets.flatMap((line) => presetOf(line) ?? []);
-					if (presets.length !== 0) {
-						const applied = this.props.applied?.tags?.join(" ") ?? "";
-						const selected = presets.findIndex((preset) => preset.tags.join(" ") === applied);
-						return (
-							<div className="tagFilterBar">
-								<select
-									aria-label="Show only tasks with the tags of a preset"
-									value={selected === -1 ? "" : String(selected)}
-									onChange={(e) => {
-										const preset = presets[Number(e.target.value)];
-										apply(e.target.value === "" || !preset ? "" : preset.tags.join(" "));
-									}}
-								>
-									<option value="">🏷️ All tasks</option>
-									{presets.map((preset, i) => (
-										<option value={String(i)} key={i} title={preset.tags.join(" ")}>
-											{preset.name}
-										</option>
-									))}
-								</select>
-							</div>
-						);
-					}
-					return (
-						<div className="tagFilterBar">
-							<input
-								type="search"
-								placeholder="🏷️ Filter by tags: #home #errand"
-								aria-label="Show only tasks with any of these tags"
-								value={this.state.text}
-								onChange={(e) => {
-									const text = e.target.value;
-									this.setState({ text });
-									if (text.trim() === "") apply("");
-								}}
-								onKeyUp={(e) => {
-									if (e.key === "Enter") apply(this.state.text);
-								}}
-							/>
-						</div>
-					);
-				}}
-			</QuickEntryHandlerContext.Consumer>
+			<div className="tagFilterBar">
+				<input
+					ref={this.input}
+					type="search"
+					placeholder="🏷️ Filter by tag: #home"
+					aria-label="Show only tasks with this tag"
+					value={this.state.text}
+					onChange={(e) => {
+						const text = e.target.value;
+						this.setState({ text });
+						if (text.trim() === "") this.apply("");
+					}}
+					onKeyUp={(e) => {
+						if (e.key === "Enter") this.apply(this.state.text);
+					}}
+				/>
+			</div>
 		);
 	}
 }

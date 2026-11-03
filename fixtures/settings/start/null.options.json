@@ -36,7 +36,6 @@
   "dateFormat": "dddd, MMM, D",
   "inbox": "Inbox.md",
   "taskFiles": [],
-  "tagFilterPresets": [],
   "tagColorPalette": {
     "#TODO": "#339988",
     "#TEST": "#998877"
@@ -55,7 +54,6 @@
   "useSection": true,
   "useModifyBadge": true,
   "openNoteInsteadOfInPlace": false,
-  "newDateStyle": "emoji",
   "hideStatusTasks": [
     "x",
     "-"

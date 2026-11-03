@@ -370,8 +370,7 @@
 	margin: 0 5px 10px 5px;
 }
 
-.taskido .tagFilterBar input,
-.taskido .tagFilterBar select {
+.taskido .tagFilterBar input {
 	width: 100%;
 }
 

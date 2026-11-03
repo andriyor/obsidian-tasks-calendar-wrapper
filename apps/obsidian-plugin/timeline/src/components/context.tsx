@@ -16,7 +16,6 @@ export const UserOptionContext = React.createContext({
 	tagPalette: {} as Record<string, string>,
 	hideTags: [] as string[],
 	useBuiltinStyle: true as boolean,
-	tagFilterPresets: [] as string[],
 });
 
 export const QuickEntryHandlerContext = React.createContext<{
@@ -28,6 +27,8 @@ export const QuickEntryHandlerContext = React.createContext<{
 		tags?: string[],
 	) => void;
 	quickFilter?: QuickFilter;
+	/** Suggests the tags under the tag filter's input; returns what stops it. */
+	suggestTags?: (input: HTMLInputElement, tags: () => readonly string[], pick: (tag: string) => void) => () => void;
 }>({
 	handleCreateNewTask: async (filePath: string, content: string) => false,
 	handleFilterEnable: (startDate: string | undefined, enddate: string | undefined, priorities: string[]) => {},

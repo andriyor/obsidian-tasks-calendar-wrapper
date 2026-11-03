@@ -40,6 +40,7 @@ import type { PendingWrites } from "./pendingwrites";
 import { QuickEntryHandlerContext, TaskItemEventHandlersContext } from "./components/context";
 import { CalendarView } from "./components/calendarview";
 import { recordProvider } from "./components/renderprobe";
+import { TagSuggest } from "./tagsuggest";
 import { TimelineView } from "./components/timelineview";
 
 const defaultObsidianBridgeProps = {
@@ -349,12 +350,22 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 		return this.taskItemHandlers;
 	}
 
+	private readonly suggestTags = (
+		input: HTMLInputElement,
+		tags: () => readonly string[],
+		pick: (tag: string) => void,
+	) => {
+		const suggest = new TagSuggest(this.app, input, tags, pick);
+		return () => suggest.close();
+	};
+
 	private getQuickEntryHandlers(): React.ContextType<typeof QuickEntryHandlerContext> {
 		if (!this.quickEntryHandlers || this.quickEntryHandlers.quickFilter !== this.state.quickFilter) {
 			this.quickEntryHandlers = {
 				handleCreateNewTask: this.handleCreateNewTask,
 				handleFilterEnable: this.handleFilterEnable,
 				quickFilter: this.state.quickFilter,
+				suggestTags: this.suggestTags,
 			};
 		}
 		return this.quickEntryHandlers;

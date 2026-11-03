@@ -10,7 +10,7 @@ import { defaultUserOptions, type UserOption } from "../src/useroptions";
 import { QuickEntryHandlerContext, TaskItemEventHandlersContext } from "../timeline/src/components/context";
 import { mountView, onTimelineRender } from "./component-harness";
 import { notesApp } from "./view-harness";
-import { Platform } from "./stubs/obsidian";
+import { AbstractInputSuggest, Platform } from "./stubs/obsidian";
 
 // Inline Note.md has the action badges; Done.md supplies a noninteractive relative badge, Other.md an unplanned row.
 const sourceLine = "- [ ] all badges #work ⏫ 🔁 every day 🛫 2026-01-13 ⏳ 2026-01-14 📅 2026-01-16";
@@ -210,32 +210,16 @@ const interactions: Interaction[] = [
 		prepare: "filter",
 	},
 	{
-		name: "Enter in the tag filter calls handleFilterEnable with the typed tags, each with its #",
+		name: "Enter in the tag filter calls handleFilterEnable with the typed tag and its #",
 		selector: ".tagFilterBar input",
 		event: "keyup",
 		handler: "handleFilterEnable",
-		args: [undefined, undefined, [], ["#home", "#errand"]],
+		args: [undefined, undefined, [], ["#home"]],
 		openNote: false,
 		defaultPrevented: false,
 		prepare: "tags",
 		// Shown although the quick entry panel is not.
 		options: { useQuickEntry: false },
-	},
-	{
-		name: "picking a tag filter preset calls handleFilterEnable with its tags",
-		selector: ".tagFilterBar select",
-		event: "change",
-		value: "1",
-		handler: "handleFilterEnable",
-		args: [undefined, undefined, [], ["#c/work"]],
-		openNote: false,
-		defaultPrevented: false,
-		options: { tagFilterPresets: ["Home: #home #errand", "#c/work", "no tags here"] },
-		checkLocal: (fixture) =>
-			assert.deepEqual(
-				[...fixture.root().querySelectorAll(".tagFilterBar option")].map((option) => option.textContent),
-				["🏷️ All tasks", "Home", "#c/work"],
-			),
 	},
 	{
 		name: "changing the quick entry note selects it and focuses the text without submitting",
@@ -433,10 +417,7 @@ async function prepare(fixture: Mounted, mode?: Interaction["prepare"]) {
 		const input = fixture.root().querySelector<HTMLInputElement>(".tagFilterBar input");
 		assert.ok(input);
 		await act(() => {
-			Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!.call(
-				input,
-				"home, #errand",
-			);
+			Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!.call(input, " home ");
 			input.dispatchEvent(new Event("input", { bubbles: true }));
 		});
 		assert.deepEqual(fixture.calls, [], "typing changes the draft without submitting it");
@@ -495,6 +476,23 @@ for (const row of interactions) {
 		} else assert.deepEqual(fixture.calls, [{ handler: row.handler, args: row.args }]);
 	});
 }
+
+test("the tag filter suggests the tasks' tags and applies the one picked", async (t) => {
+	const fixture = await mountInteractions(t, { useQuickEntry: false });
+	const input = fixture.root().querySelector<HTMLInputElement>(".tagFilterBar input");
+	const suggest = AbstractInputSuggest.made.at(-1) as AbstractInputSuggest<string> & {
+		selectSuggestion(tag: string): void;
+	};
+	assert.equal(suggest.textInputEl, input);
+	input!.value = "WO";
+	assert.deepEqual(await suggest.suggestions(), ["#work"]);
+	input!.value = "#nothing";
+	assert.deepEqual(await suggest.suggestions(), []);
+	await act(() => suggest.selectSuggestion("#work"));
+	assert.deepEqual(fixture.calls, [{ handler: "handleFilterEnable", args: [undefined, undefined, [], ["#work"]] }]);
+	assert.equal(input!.value, "#work");
+	assert.equal(suggest.isOpen, false);
+});
 
 test("a click within 300 ms of the list commit is ignored", async (t) => {
 	const fixture = await mountInteractions(t, {}, true);
