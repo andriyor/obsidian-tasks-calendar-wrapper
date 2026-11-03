@@ -18,6 +18,7 @@ import { heldOf, initialTimelineState, type TimelineState, withOptions, withRelo
 import { UserOption } from "./useroptions";
 
 export const TIMELINE_VIEW = "tasks_timeline_view";
+export const CALENDAR_VIEW = "tasks_calendar_view";
 
 export { heldOf } from "./state/timeline";
 
@@ -29,8 +30,10 @@ export function timelineTaskIndex(app: App): SharedTaskIndex {
 	return createSharedTaskIndex({ app, moment, parseKey: () => parseKeyOf(moment) });
 }
 
-export class TasksTimelineView extends ItemView {
+/** A view that renders the tasks it reads from the shared task index, as a timeline or as a month calendar. */
+export abstract class TasksView extends ItemView {
 	private root?: Root;
+	protected abstract readonly layout: "timeline" | "calendar";
 	/** The options, the tasks read last and the list shown, see TimelineState, which the bridge renders. */
 	private readonly store = createStore<TimelineState>(initialTimelineState());
 	/** Tasks belonging to the committed list, which can lag behind the store during a transition. */
@@ -89,7 +92,6 @@ export class TasksTimelineView extends ItemView {
 	/** The files that had tasks at the last reload. */
 	private filesWithTasks: ReadonlySet<string> = new Set();
 	private readonly requestReload = debounce(() => this.onReloadTasks(), RELOAD_DELAY_MS, true);
-	static view: TasksTimelineView | null = null;
 	constructor(
 		leaf: WorkspaceLeaf,
 		notes: ReaderSource,
@@ -101,8 +103,6 @@ export class TasksTimelineView extends ItemView {
 		this.undoNotices = createUndoNotices(writer, notices, { onWriteResult: this.onWriteResult });
 		this.stopWrites = writer.onWrite((event) => this.onWrite(event));
 		this.viewWriter = writer;
-
-		TasksTimelineView.view = this;
 	}
 
 	async onOpen(): Promise<void> {
@@ -137,6 +137,7 @@ export class TasksTimelineView extends ItemView {
 		this.root.render(
 			<ObsidianBridge
 				plugin={this}
+				layout={this.layout}
 				store={this.store}
 				resolveEnv={this.resolveEnv}
 				writer={this.viewWriter}
@@ -167,16 +168,6 @@ export class TasksTimelineView extends ItemView {
 		if (!this.isReloading) this.reader.close();
 		// Runs the components' cleanup, so a reload that finishes after closing renders nothing.
 		this.root?.unmount();
-		// Task rows render their markdown with this static view as the owner. Hand it to another open
-		// timeline, so a closed view and its whole task list are not kept in memory.
-		if (TasksTimelineView.view === this) {
-			TasksTimelineView.view =
-				this.app.workspace
-					.getLeavesOfType(TIMELINE_VIEW)
-					.map((leaf) => leaf.view)
-					.find((view): view is TasksTimelineView => view instanceof TasksTimelineView && view !== this) ??
-				null;
-		}
 	}
 
 	/** Only this view's own successful writes shift the targets it has already rendered. */
@@ -362,6 +353,30 @@ export class TasksTimelineView extends ItemView {
 				if (this.closed) this.reader.close();
 			});
 	}
+}
+
+export class TasksTimelineView extends TasksView {
+	protected readonly layout = "timeline";
+	static view: TasksTimelineView | null = null;
+
+	constructor(leaf: WorkspaceLeaf, notes: ReaderSource, writer: TaskWriter, notices: Pick<NoticePresenter, "undo">) {
+		super(leaf, notes, writer, notices);
+		TasksTimelineView.view = this;
+	}
+
+	async onClose(): Promise<void> {
+		await super.onClose();
+		// Task rows render their markdown with this static view as the owner. Hand it to another open
+		// timeline, so a closed view and its whole task list are not kept in memory.
+		if (TasksTimelineView.view === this) {
+			TasksTimelineView.view =
+				this.app.workspace
+					.getLeavesOfType(TIMELINE_VIEW)
+					.map((leaf) => leaf.view)
+					.find((view): view is TasksTimelineView => view instanceof TasksTimelineView && view !== this) ??
+				null;
+		}
+	}
 
 	getViewType(): string {
 		return TIMELINE_VIEW;
@@ -373,5 +388,34 @@ export class TasksTimelineView extends ItemView {
 
 	getIcon(): string {
 		return "calendar-clock";
+	}
+}
+
+export class TasksCalendarView extends TasksView {
+	protected readonly layout = "calendar";
+
+	async onOpen(): Promise<void> {
+		await super.onOpen();
+		// Collapse both side panels if either is open, otherwise expand both
+		this.addAction("columns-3", "Toggle side panels", () => {
+			const { leftSplit, rightSplit } = this.app.workspace;
+			const collapse = !leftSplit.collapsed || !rightSplit.collapsed;
+			for (const split of [leftSplit, rightSplit]) {
+				if (collapse) split.collapse();
+				else split.expand();
+			}
+		});
+	}
+
+	getViewType(): string {
+		return CALENDAR_VIEW;
+	}
+
+	getDisplayText(): string {
+		return "Tasks Calendar";
+	}
+
+	getIcon(): string {
+		return "calendar-days";
 	}
 }

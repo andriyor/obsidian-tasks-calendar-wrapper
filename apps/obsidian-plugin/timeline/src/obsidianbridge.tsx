@@ -38,6 +38,7 @@ import {
 } from "./taskwriter";
 import type { PendingWrites } from "./pendingwrites";
 import { QuickEntryHandlerContext, TaskItemEventHandlersContext } from "./components/context";
+import { CalendarView } from "./components/calendarview";
 import { recordProvider } from "./components/renderprobe";
 import { TagSuggest } from "./tagsuggest";
 import { TimelineView } from "./components/timelineview";
@@ -48,6 +49,8 @@ const defaultObsidianBridgeProps = {
 	store: createStore<TimelineState>(initialTimelineState()) as Store<TimelineState>,
 };
 type ObsidianBridgeProps = Readonly<typeof defaultObsidianBridgeProps> & {
+	/** Timeline unless set. */
+	readonly layout?: "timeline" | "calendar";
 	readonly writer: Pick<TaskWriter, "insert" | "write" | "editInTasksDialog" | "refuseIfNotReread">;
 	readonly ledger?: ShiftLedger;
 	readonly pendingWrites?: PendingWrites;
@@ -118,6 +121,7 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 		this.onStateChanged = this.onStateChanged.bind(this);
 		this.handleModifyTask = this.handleModifyTask.bind(this);
 		this.handleFilterEnable = this.handleFilterEnable.bind(this);
+		this.handleOpenDailyNote = this.handleOpenDailyNote.bind(this);
 
 		this.seen = this.props.store.getSnapshot();
 		this.state = { userOptions: this.seen.options, tasks: this.seen.tasks, reloadId: this.seen.reloadId };
@@ -232,6 +236,21 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 				5000,
 			);
 		});
+	}
+
+	/** Opens the daily note of a day in a new tab, found by the daily note folder and format options. */
+	handleOpenDailyNote(day: string) {
+		const { dailyNoteFolder, dailyNoteFormat } = this.state.userOptions;
+		const path = normalizePath(`${dailyNoteFolder}/${moment(day).format(dailyNoteFormat)}.md`);
+		const file = this.app.vault.getFileByPath(path);
+		if (!file) {
+			new Notice("No daily note for " + day + ": " + path, 5000);
+			return;
+		}
+		this.app.workspace
+			.getLeaf("tab")
+			.openFile(file)
+			.catch((reason) => new Notice("Could not open " + path + ": " + reason, 5000));
 	}
 
 	async handleModifyTask(model: TaskRowModel, evt: MouseEvent): Promise<WriteResult | void> {
@@ -375,13 +394,17 @@ export class ObsidianBridge extends React.Component<ObsidianBridgeProps, Obsidia
 		return (
 			<QuickEntryHandlerContext.Provider value={quickEntryHandlers}>
 				<TaskItemEventHandlersContext.Provider value={this.getTaskItemHandlers()}>
-					<TimelineView
-						userOptions={userOptions}
-						tasks={tasks}
-						pendingWrites={this.props.pendingWrites}
-						quickFilter={this.state.quickFilter}
-						queryEnv={(now) => this.queryEnvFor(now, tasks, userOptions)}
-					/>
+					{this.props.layout === "calendar" ? (
+						<CalendarView userOptions={userOptions} tasks={tasks} onOpenDay={this.handleOpenDailyNote} />
+					) : (
+						<TimelineView
+							userOptions={userOptions}
+							tasks={tasks}
+							pendingWrites={this.props.pendingWrites}
+							quickFilter={this.state.quickFilter}
+							queryEnv={(now) => this.queryEnvFor(now, tasks, userOptions)}
+						/>
+					)}
 				</TaskItemEventHandlersContext.Provider>
 			</QuickEntryHandlerContext.Provider>
 		);
